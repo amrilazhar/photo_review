@@ -97,6 +97,9 @@ class PhotoController {
 			switch (req.query.sources) {
 				case "unsplash":
 					photoData = (await myUnsplash.getPhoto(req.query.photo_id)).response;
+          if (!photoData) {
+            photoData = null
+          }
 					break;
 				case "flickr":
 					photoData = await myFlickr.getPhoto(req.query.photo_id);
@@ -106,7 +109,7 @@ class PhotoController {
 					break;
 			}
 
-			if (!photoData.errors) {
+			if (photoData != null) {
 				res.status(200).json({
 					message: "success",
 					data_photo: photoData,
@@ -119,7 +122,7 @@ class PhotoController {
 		} catch (error) {
 			console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
 			}
 			next(error);
 		}

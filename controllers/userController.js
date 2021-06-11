@@ -118,14 +118,12 @@ class UserController {
 	async addFavorite(req, res, next) {
 		try {
 			let dataUser = await user.findOne({ _id: req.user.id });
-			let photoId = null;
+			let photoId = await photo.findOne({ photo_id: req.query.photo_id });
 			let photoData;
 			let insertedPhoto;
 
 			switch (req.query.sources) {
 				case "unsplash":
-					photoId = await photo.findOne({ unsplash_id: req.query.photo_id });
-
 					//if photo id null, then create new photo record
 					if (!photoId) {
 						photoData = await myUnsplash.getPhoto(req.query.photo_id);
@@ -140,7 +138,18 @@ class UserController {
 					}
 					break;
 				case "flickr":
-					photoId = await photo.findOne({ flickr_id: req.query.photo_id });
+					if (!photoId) {
+						photoData = await myFlickr.getPhoto(req.query.photo_id);
+						if (!photoData) {
+							const error = new Error("Photo not found");
+							error.statusCode = 400;
+							throw error;
+						}
+						insertedPhoto = await myFlickr.savePhotoToLocal(photoData);
+					} else {
+						insertedPhoto = photoId._id;
+					}
+
 					break;
 				default:
 					photoId = null;
@@ -181,7 +190,7 @@ class UserController {
 
 			switch (req.query.sources) {
 				case "unsplash":
-					photoId = await photo.findOne({ unsplash_id: req.query.photo_id });
+					photoId = await photo.findOne({ photo_id: req.query.photo_id });
 
 					//if photo id null, then return error
 					if (!photoId) {

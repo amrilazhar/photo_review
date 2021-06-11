@@ -4,11 +4,7 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 
 const PhotosSchema = new mongoose.Schema(
   {
-    unsplash_id: {
-      type: String,
-      required: false,
-    },
-    flickr_id : {
+    photo_id: {
       type: String,
       required: false,
     },

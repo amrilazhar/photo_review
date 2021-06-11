@@ -6,8 +6,6 @@ const { isUserOrGlobal } = require("../middlewares/auth");
 
 //Import Controller Here
 const photoController = require("../controllers/photoController");
-//Import Midddlewares Here
-const searchValidator = require("../middlewares/validators/searchValidator");
 
 //Create your Router Here
 router.get("/all", isUserOrGlobal, photoController.allReviewed);

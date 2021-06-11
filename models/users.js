@@ -26,7 +26,7 @@ const UserSchema = new mongoose.Schema(
     favorite : [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "photo",
+        ref: "photos",
       },
     ],
     profile_picture: {

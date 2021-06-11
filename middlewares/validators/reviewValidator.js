@@ -6,32 +6,7 @@ exports.create = async (req, res, next) => {
     try {
         let errors = [];
 
-        // Check id_barang is valid or not
-        if (!mongoose.Types.ObjectId.isValid(req.body.movie_id)) {
-            errors.push(
-                "movie_id is not valid and must be 24 character & hexadecimal"
-            );
-        }
-
-        // Check movie_id is valid or not
-        // If the parameters is not valid it will go here
-        if (errors.length > 0) {
-            return res.status(400).json({
-                message: errors.join(", "),
-            });
-        }
-
-        // Find barang and pelanggan
-        let findData = await Promise.all([
-            movie.findOne({ _id: req.body.movie_id }),
-        ]);
-
-        // if movie not found
-        if (!findData[0]) {
-            errors.push("Movie not found");
-        }
-
-        // Check is jumlah numeric?
+        // Check is rating numeric and not greater than 5?
         if (!validator.isNumeric(req.body.rating)) {
             errors.push("Rating must be a number");
         } else {
@@ -68,13 +43,6 @@ exports.update = async (req, res, next) => {
             );
         }
 
-        // Check id_pelanggan is valid or not
-        if (!mongoose.Types.ObjectId.isValid(req.body.movie_id)) {
-            errors.push(
-                "movie_id is not valid and must be 24 character & hexadecimal"
-            );
-        }
-
         // If the parameters is not valid it will go here
         if (errors.length > 0) {
             return res.status(400).json({
@@ -84,7 +52,7 @@ exports.update = async (req, res, next) => {
 
         // Find barang, pelanggan and transaksi
         let findData = await Promise.all([
-            movie.findOne({ _id: req.body.movie_id }),
+            photo.findOne({ _id: req.body.photo_id }),
             review.findOne({ _id: req.params.id }),
         ]);
 

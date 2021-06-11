@@ -69,7 +69,6 @@ module.exports.getPhoto = async (id) => {
 				urls.raw = el.source;
 			}
 		});
-		console.log(urls);
 		let dataResult = Object.assign(detail, { urls: urls });
 		return dataResult;
 	} catch (error) {
