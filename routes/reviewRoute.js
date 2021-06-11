@@ -11,8 +11,9 @@ const reviewController = require("../controllers/reviewController");
 
 //Create your Router Here
 router.get("/:id", isUser, reviewValidator.get, reviewController.getOne);
-router.post("/", isUser, reviewValidator.create, reviewController.create);
 router.put("/:id", isUser, reviewValidator.update, reviewController.update);
 router.delete("/:id", isUser, reviewValidator.delete, reviewController.delete);
+router.post("/", isUser, reviewValidator.create, reviewController.create);
+
 
 module.exports = router;

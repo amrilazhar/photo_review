@@ -17,7 +17,7 @@ const PhotosSchema = new mongoose.Schema(
       required: false,
     },
     description: {
-      type: Date,
+      type: String,
       required: false,
     },
     image_links: {
@@ -29,10 +29,10 @@ const PhotosSchema = new mongoose.Schema(
       required: false,
     },
     likes : {
-      type: Array,
+      type: Number,
       required: false,
     },
-    unsplash_user : {
+    source_user : {
       type: Object,
       required: false,
     },

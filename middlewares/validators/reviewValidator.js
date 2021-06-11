@@ -1,6 +1,6 @@
 const validator = require("validator");
 const mongoose = require("mongoose");
-const { user, review, movie } = require("../../models");
+const { review, photo } = require("../../models");
 
 exports.create = async (req, res, next) => {
     try {
@@ -50,19 +50,11 @@ exports.update = async (req, res, next) => {
             });
         }
 
-        // Find barang, pelanggan and transaksi
-        let findData = await Promise.all([
-            photo.findOne({ _id: req.body.photo_id }),
-            review.findOne({ _id: req.params.id }),
-        ]);
+        // Find data review based on ID
+        let findData = await review.findOne({ _id: req.params.id });
 
-        // if barang not found
-        if (!findData[0]) {
-            errors.push("movie not found");
-        }
-
-        // If pelanggan not found
-        if (!findData[1]) {
+        // If review not found
+        if (!findData) {
             errors.push("review not found");
         }
 

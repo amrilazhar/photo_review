@@ -43,20 +43,22 @@ module.exports.getPhoto = async (id) => {
 module.exports.savePhotoToLocal = async (data) => {
     try {
         let newData = {
-            unsplash_id: data.id,
-            flickr_id: null,
+            photo_id: data.id,
             width: data.width,
             height: data.height,
             description: data.description,
             image_links: data.urls,
             categories: data.categories,
             likes: data.likes,
-            unsplash_user: data.user,
+            source_user: data.user,
             avg_rating: 0,
             count_review: 0,
-            source_created_at: data.created_at,
-            source_updated_at: data.updated_at,
+            source_created_at: new Date(data.created_at),
+            source_updated_at: new Date(data.updated_at),
+            source_type : 'unsplash',
         };
+
+
     
         let insertedData = await photo.create(newData);
         if (insertedData) {

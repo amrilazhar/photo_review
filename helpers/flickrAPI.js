@@ -1,5 +1,6 @@
 let Flickr = require("flickr-sdk");
 let flickr = new Flickr(process.env.FLICKR_API_KEY);
+const { photo } = require("../models");
 
 module.exports.search = async (opt) => {
 	try {
@@ -60,13 +61,17 @@ module.exports.getPhoto = async (id) => {
 	try {
 		let detail = (await flickr.photos.getInfo({ photo_id: id })).body.photo;
 		let size = (await flickr.photos.getSizes({ photo_id: id })).body.sizes.size;
+        let likes = (await flickr.photos.getFavorites({ photo_id: id })).body.photo.total;
+        detail.likes = eval(likes);
 		let urls = {};
 		size.forEach((el) => {
 			if (el.label == "Thumbnail") {
 				urls.thumb = el.source;
 			} else if (el.label == "Original") {
-                urls.full = el.source;
+				urls.full = el.source;
 				urls.raw = el.source;
+                detail.width = el.width;
+                detail.height = el.height;
 			}
 		});
 		let dataResult = Object.assign(detail, { urls: urls });
@@ -79,21 +84,24 @@ module.exports.getPhoto = async (id) => {
 
 module.exports.savePhotoToLocal = async (data) => {
 	try {
+		let likes = (await flickr.photos.getFavorites({ photo_id: data.id })).body.photo.total;
+        let dates = new Date(eval(data.dateuploaded));
 		let newData = {
-			unsplash_id: data.id,
-			flickr_id: null,
+			photo_id: data.id,
 			width: data.width,
 			height: data.height,
-			description: data.description,
+			description: data.description._content,
 			image_links: data.urls,
-			categories: data.categories,
-			likes: data.likes,
-			unsplash_user: data.user,
+			categories: [],
+			likes: eval(likes),
+			source_user: data.owner,
 			avg_rating: 0,
 			count_review: 0,
-			source_created_at: data.created_at,
-			source_updated_at: data.updated_at,
+			source_created_at: dates,
+			source_updated_at: dates,
+			source_type: "flickr",
 		};
+        console.log(newData);
 
 		let insertedData = await photo.create(newData);
 		if (insertedData) {

@@ -105,7 +105,7 @@ class PhotoController {
 					photoData = await myFlickr.getPhoto(req.query.photo_id);
 					break;
 				default:
-					photoData.errors = true;
+					photoData = null;
 					break;
 			}
 

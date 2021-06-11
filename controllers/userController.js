@@ -1,5 +1,6 @@
 const { user, review, photo } = require("../models");
 const myUnsplash = require("../helpers/unsplashAPI");
+const myFlickr = require("../helpers/flickrAPI");
 
 class UserController {
 	// View data user
@@ -127,12 +128,14 @@ class UserController {
 					//if photo id null, then create new photo record
 					if (!photoId) {
 						photoData = await myUnsplash.getPhoto(req.query.photo_id);
-						if (photoData.errors.length > 0) {
+						if (photoData.errors) {
 							const error = new Error("Photo not found");
 							error.statusCode = 400;
 							throw error;
 						}
-						insertedPhoto = await myUnsplash.savePhotoToLocal(photoData);
+						insertedPhoto = await myUnsplash.savePhotoToLocal(
+							photoData.response
+						);
 					} else {
 						insertedPhoto = photoId._id;
 					}
@@ -185,45 +188,26 @@ class UserController {
 	async deleteFavorite(req, res, next) {
 		try {
 			let dataUser = await user.findOne({ _id: req.user.id });
+			//no favorite data
+			if (dataUser.favorite.length == 0) {
+				return res.status(400).json({ message: "Favorite is empty" });
+			} 
+
 			let indexOfIdPhoto;
-			let photoId = null;
+			let photoId = await photo.findOne({ photo_id: req.query.photo_id });
 
-			switch (req.query.sources) {
-				case "unsplash":
-					photoId = await photo.findOne({ photo_id: req.query.photo_id });
-
-					//if photo id null, then return error
-					if (!photoId) {
-						const error = new Error("Photo has not been added at favorite");
-						error.statusCode = 400;
-						throw error;
-					}
-					break;
-				case "flickr":
-					photoId = await photo.findOne({ flickr_id: req.query.photo_id });
-					//if photo id null, then return error
-					if (!photoId) {
-						const error = new Error("Photo has not been added at favorite");
-						error.statusCode = 400;
-						throw error;
-					}
-					break;
-				default:
-					photoId = null;
-					break;
+			if (!photoId) {
+				const error = new Error("Photo has not been added at favorite");
+				error.statusCode = 400;
+				throw error;
 			}
-
+			
 			indexOfIdPhoto = dataUser.favorite.indexOf(photoId._id);
 			dataUser.favorite.splice(indexOfIdPhoto, 1);
 			await dataUser.save();
 
-			if (dataUser.favorite.length == 0) {
-				return res.status(200).json({ message: "Favorite is empty" });
-			} else {
-				res
-					.status(200)
-					.json({ message: "delete favorite success", data: dataUser });
-			}
+			res.status(200).json({ message: "Delete success", data: dataUser });
+
 		} catch (error) {
 			console.log(error);
 			if (!error.statusCode) {

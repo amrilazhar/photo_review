@@ -1,5 +1,6 @@
-const { review } = require("../models");
-
+const { review, photo } = require("../models");
+const myUnsplash = require("../helpers/unsplashAPI");
+const myFlickr = require("../helpers/flickrAPI");
 class ReviewController {
 	async getOne(req, res, next) {
 		try {
@@ -26,21 +27,70 @@ class ReviewController {
 				message: "Success",
 				data: singleReview,
 			});
-		} catch (e) {
-			console.log(e);
-			return res.status(500).json({
-				message: "Internal Server Error",
-				error: e.message,
-			});
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
 	async create(req, res, next) {
 		try {
+			let insertedPhotoId;
+      let photoData;
+			let createdData = {
+				title: req.body.title,
+				rating: eval(req.body.rating),
+				review: req.body.review,
+				user_id: req.user.id,
+			};
 			req.body.user_id = req.user.id;
 
+      //check if the photo available
+			let photoId = await photo.findOne({ photo_id: req.body.photo_id }).exec();
+
+			switch (req.body.sources) {
+				case "unsplash":
+					//if photo id null, then create new photo record
+					if (!photoId) {
+						photoData = await myUnsplash.getPhoto(req.body.photo_id);
+						if (photoData.errors) {
+							const error = new Error("Photo not found");
+							error.statusCode = 400;
+							throw error;
+						}
+						insertedPhotoId = await myUnsplash.savePhotoToLocal(
+							photoData.response
+						);
+					} else {
+						insertedPhotoId = photoId._id;
+					}
+					break;
+				case "flickr":
+					if (!photoId) {
+						photoData = await myFlickr.getPhoto(req.body.photo_id);
+						if (!photoData) {
+							const error = new Error("Photo not found");
+							error.statusCode = 400;
+							throw error;
+						}
+						insertedPhotoId = await myFlickr.savePhotoToLocal(photoData);
+					} else {
+						insertedPhotoId = photoId._id;
+					}
+					break;
+				default:
+					photoId = null;
+					break;
+			}
+
+      // add new photo id
+      createdData.photo_id = insertedPhotoId;
+
 			// Create data
-			let data = await review.create(req.body);
+			let data = await review.create(createdData);
 
 			return res.status(201).json({
 				message: "Success",
@@ -49,58 +99,78 @@ class ReviewController {
 		} catch (e) {
 			if (
 				e.code == 11000 &&
-				e.keyPattern.movie_id == 1 &&
+				e.keyPattern.photo_id == 1 &&
 				e.keyPattern.user_id == 1
 			) {
-				//console.log(e);
-				return res.status(400).json({
-					message: "Error",
-					error: "User has been reviewed this movie",
-				});
+				const error = new Error("User has been reviewed this photo");
+				error.statusCode = 400;
+				throw error;
 			} else {
 				console.log(e);
-				return res.status(500).json({
-					message: "Internal Server Error",
-					error: e.message,
-				});
+				if (!e.statusCode) {
+					e.statusCode = 500;
+				}
+				next(e);
 			}
 		}
 	}
 
 	async update(req, res, next) {
 		try {
+			let updateData = {};
+
+			if (req.body.title) {
+				updateData.title = req.body.title;
+			}
+
+			if (req.body.rating) {
+				updateData.rating = eval(req.body.rating);
+			}
+
+			if (req.body.review) {
+				updateData.review = req.body.review;
+			}
+
+      if (req.body.photo_id) {
+				updateData.photo_id = req.body.photo_id;
+			}
+
+			if (updateData === {}) {
+				const error = new Error("no new data inserted");
+				error.statusCode = 400;
+				throw error;
+			}
+
 			req.body.user_id = req.user.id;
 			const singleReview = await review.findById(req.params.id);
 
 			if (singleReview.user_id.toString() !== req.user.id && req.user.id) {
-				return res.status(404).json({
-					message: `you are not the owner of this review`,
-				});
+				const error = new Error("you are not the owner of this review");
+				error.statusCode = 400;
+				throw error;
 			}
 			// Update data
 			let data = await review.findOneAndUpdate(
 				{
 					_id: req.params.id,
 				},
-				req.body, // This is all of req.body
+				updateData,
 				{
 					new: true,
 				}
 			);
-			// new is to return the updated transaksi data
-			// If no new, it will return the old data before updated
 
 			// If success
 			return res.status(201).json({
 				message: "Success",
 				data,
 			});
-		} catch (e) {
-			console.log(e);
-			return res.status(500).json({
-				message: "Internal Server Error",
-				error: e.message,
-			});
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
@@ -120,12 +190,12 @@ class ReviewController {
 			return res.status(200).json({
 				message: "Success to delete review",
 			});
-		} catch (e) {
-			// If failed
-			return res.status(500).json({
-				message: "Internal Server Error",
-				error: e.message,
-			});
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 }
