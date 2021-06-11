@@ -47,7 +47,15 @@ const PhotosSchema = new mongoose.Schema(
     count_review : {
       type : Number,
       required : false,
-    }
+    },
+    source_created_at : {
+      type : Date,
+      required : false,
+    },
+    source_updated_at : {
+      type : Date,
+      required : false,
+    },
   },
   {
     timestamps: {
