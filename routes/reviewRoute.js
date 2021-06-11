@@ -10,9 +10,9 @@ const reviewValidator = require("../middlewares/validators/reviewValidator");
 const reviewController = require("../controllers/reviewController");
 
 //Create your Router Here
-router.get("/getOne/:id", isUser, reviewValidator.get, reviewController.getOne);
-router.post("/add", isUser, reviewValidator.create, reviewController.create);
-router.put("/update/:id", isUser, reviewValidator.update, reviewController.update);
-router.delete("/delete/:id", isUser, reviewValidator.delete, reviewController.delete);
+router.get("/:id", isUser, reviewValidator.get, reviewController.getOne);
+router.post("/", isUser, reviewValidator.create, reviewController.create);
+router.put("/:id", isUser, reviewValidator.update, reviewController.update);
+router.delete("/:id", isUser, reviewValidator.delete, reviewController.delete);
 
 module.exports = router;

@@ -56,6 +56,10 @@ const PhotosSchema = new mongoose.Schema(
       type : Date,
       required : false,
     },
+    source_type : {
+      type : String,
+      required : true,
+    },
   },
   {
     timestamps: {

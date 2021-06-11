@@ -13,12 +13,17 @@ const userValidator = require("../middlewares/validators/userValidator");
 const userUpload = require("../middlewares/uploads/userUpload");
 
 //Create your Router Here
-// router.get("/userProfile/:id", isUserOrGlobal , userController.userProfile); //view all user profile (if global want to view our profile)
-router.put("/userUpdate/:id", userValidator.validate, isUser, userUpload, userController.userUpdate); //Update profile
-router.get("/myUserProfile", isUser, userController.myUserProfile); //view my user profile
-router.get("/userGetReview", isUser, userController.userGetReview); //get review
-router.get("/getWatchlist",isUser, userController.getWatchList) //get watchlist
-router.put("/addWatchList", isUser, userValidator.validateAddWatchList, userController.addWatchList) //add watchlist
-router.put("/deleteWatchList", isUser, userValidator.validateDeleteWatchList, userController.deleteWatchList) //deleteWatchlist
+router.get("/me", isUser, userController.myUserProfile); //view my user profile
+router.get("/reviewed_photo", isUser, userController.userGetReview); //get list photo reviewed
+router.get("/favorite_list", isUser, userController.getFavorite); //get watchlist
+router.put("/favorite", isUser, userController.addFavorite); //add watchlist
+router.delete("/unfavorite", isUser, userController.deleteFavorite); //deleteWatchlist
+router.put(
+	"/:id",
+	userValidator.validate,
+	isUser,
+	userUpload,
+	userController.userUpdate
+); //Update user profile
 
 module.exports = router;

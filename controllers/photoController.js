@@ -1,104 +1,138 @@
-const { user, review, photo } = require("../models");
+const { review, photo } = require("../models");
 const myUnsplash = require("../helpers/unsplashAPI");
 
 class PhotoController {
-	async detail(req, res) {
+	async browsePhoto(req, res) {
 		try {
-			//get movie detail info
-			let detailMovie = await movie.find({
-				deleted: false,
-				_id: req.params.id_movie,
-			});
+			let page = req.query.page ? req.query.page : 1;
+			let limit = req.query.limit ? req.query.limit : 10;
+			let browseData = await myUnsplash.browse(page, limit);
 
-			if (Object.keys(req).includes("user")) {
-				//cek if user has reviewed the movie
-				let cekReview = await review.find({
-					user_id: req.user.id,
-					movie_id: req.params.id_movie,
-				});
-				//set review Status
-				if (cekReview.length == 0) {
-					detailMovie[0]._doc.reviewStatus = false;
-					detailMovie[0]._doc.reviewID = null;
-				} else {
-					detailMovie[0]._doc.reviewStatus = true;
-					detailMovie[0]._doc.reviewID = cekReview[0]._id;
-				}
-
-				//cek if user has add watchlist of the movie
-				let cekWatch = await user
-					.find({ user_id: req.user.id })
-					.select("watchlist")
-					.exec();
-				if (cekWatch.includes(req.params.id_movie)) {
-					detailMovie[0]._doc.watchlistStatus = true;
-				} else {
-					detailMovie[0]._doc.watchlistStatus = false;
-				}
+			res.status(200).json({ message: "success", data: browseData.response });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
 			}
-
-			if (!detailMovie.length == 0) {
-				res.status(200).json({ message: "success", data: detailMovie });
-			} else {
-				res.status(400).json({ message: "No movie Found", data: detailMovie });
-			}
-		} catch (e) {
-			console.log(e);
-			res.status(500).json({ message: "Internal server error" });
+			next(error);
 		}
 	}
 
-	async getReview(req, res) {
+	//get detail movie from local DB
+	async detail_local(req, res) {
 		try {
-			//cek paginate status
-			let paginateStatus = true;
-			if (req.query.pagination) {
-				if (req.query.pagination == "false") {
-					paginateStatus = false;
-				}
+			let photoId = null;
+
+			switch (req.query.sources) {
+				case "unsplash":
+					photoId = await photo.findOne({ unsplash_id: req.query.photo_id });
+					//if photo id null, then create new photo record
+					if (!photoId) {
+						const error = new Error("Photo Not Found in Local");
+						error.statusCode = 400;
+						throw error;
+					}
+					break;
+				case "flickr":
+					photoId = await photo.findOne({ flickr_id: req.query.photo_id });
+					if (!photoId) {
+						const error = new Error("Photo Not Found in Local");
+						error.statusCode = 400;
+						throw error;
+					}
+					break;
+				default:
+					photoId = null;
+					break;
 			}
-			const options = {
-				select: "title rating review updated_at",
-				sort: { updated_at: -1 },
-				populate: { path: "user_id", select: "name profile_picture" },
-				page: req.query.page ? req.query.page : 1,
-				limit: req.query.limit ? req.query.limit : 10,
-				pagination: paginateStatus,
-			};
 
-			let dataReview = await review.paginate(
-				{ movie_id: req.params.id_movie },
-				options
-			);
+			if (photoId) {
+				let returnedData = {
+					message: "success",
+					data_photo: photoId,
+					data_review: null,
+				};
 
-			if (dataReview.totalDocs > 0) {
-				return res.status(200).json({ message: "success", data: dataReview });
+				let reviewData = await review
+					.find({ photo: photoId._id })
+					.lean()
+					.exec();
+				if (reviewData) {
+					returnedData.data_review = reviewData;
+				}
+
+				return res.status(200).json(returnedData);
 			} else {
 				return res
 					.status(400)
-					.json({ message: "Not Yet Reviewed", data: dataReview });
+					.json({ message: "No photo Found", data_photo: [], data_review: [] });
 			}
-		} catch (e) {
-			console.log(e);
-			res.status(500).json({ message: "Internal server error" });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
-	async getAll(req, res) {
+	//get Detail movie from sources
+	async detail_sources(req, res) {
+		try {
+			let photoData = null;
+			switch (req.query.sources) {
+				case "unsplash":
+					photoData = await myUnsplash.getPhoto(req.query.photo_id);
+					break;
+				case "flickr":
+					photoData = await photo.findOne({ flickr_id: req.query.photo_id });
+					break;
+				default:
+					photoId = null;
+					break;
+			}
+
+			if (!photoData.errors) {
+				res.status(200).json({
+					message: "success",
+					data_photo: photoData.response,
+				});
+			} else {
+				res
+					.status(400)
+					.json({ message: "No photo Found", data_photo: [], data_review: [] });
+			}
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
+		}
+	}
+
+	//get all reviewed photo from local database
+	async allReviewed(req, res) {
 		try {
 			const options = {
-				select: "title poster avg_rating genre release_date",
-				sort: { release_date: -1 },
+				sort: { updated_at: -1 },
 				page: req.query.page ? req.query.page : 1,
 				limit: req.query.limit ? req.query.limit : 10,
 			};
 
-			let dataMovie = await movie.paginate({ deleted: false }, options);
+			let reviewedPhoto = await photo.paginate(
+				{ count_review: { $gt: 0 } },
+				options
+			);
 
-			if (dataMovie.totalDocs > 0) {
-				res.status(200).json({ message: "success", data: dataMovie });
+			if (reviewedPhoto.totalDocs > 0) {
+				return res
+					.status(200)
+					.json({ message: "success", data: reviewedPhoto });
 			} else {
-				res.status(400).json({ message: "Not Found" });
+				return res
+					.status(400)
+					.json({ message: "Not Reviewed Photo", data: reviewedPhoto });
 			}
 		} catch (e) {
 			console.log(e);
@@ -106,6 +140,7 @@ class PhotoController {
 		}
 	}
 
+	//search photo from external API
 	async search(req, res) {
 		try {
 			let options = {
@@ -114,19 +149,22 @@ class PhotoController {
 				perPage: req.query.limit ? req.query.limit : 10,
 			};
 
-      if (req.query.color) {
-        options.color = req.query.color;
-      }
+			if (req.query.color) {
+				options.color = req.query.color;
+			}
 
-      if (req.query.orientation) {
-        options.orientation = req.query.orientation;
-      }
+			if (req.query.orientation) {
+				options.orientation = req.query.orientation;
+			}
 
 			let result = await myUnsplash.search(options);
 			return res.status(200).json(result);
-		} catch (e) {
-			console.log(e);
-			res.status(500).json({ message: "Internal server error" });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 }

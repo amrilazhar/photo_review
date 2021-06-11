@@ -78,16 +78,6 @@ app.use("/review", reviewRoutes);
 const userRoutes = require("./routes/userRoute.js");
 app.use("/user", userRoutes);
 
-
-//========================= Error Handler ==========================
-app.use((err, req, res, next) => {
-	const status = err.statusCode || 500;
-	const message = err.message;
-	const data = err.data;
-	res.status(status).json({ success: false, message: message, data: data });
-});
-//========================= End Error Handler ======================
-
 //======================== security code ==============================//
 // Sanitize data
 app.use(mongoSanitize());
@@ -128,6 +118,17 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("combined", { stream: accessLogStream }));
 }
 //======================== end security code ==============================//
+
+
+//========================= Error Handler ==========================
+app.use((err, req, res, next) => {
+	const status = err.statusCode || 500;
+	const message = err.message;
+	const data = err.data;
+	res.status(status).json({ success: false, message: message, data: data });
+});
+//========================= End Error Handler ======================
+
 
 //======================== Listen Server ===========================
 if (process.env.NODE_ENV !== "test") {

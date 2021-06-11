@@ -8,9 +8,12 @@ class UserController {
 			let dataUser = await user.findOne({ _id: req.user.id });
 			delete dataUser._doc.password;
 			return res.status(200).json({ message: "Success", data: dataUser });
-		} catch (e) {
-			console.log(e);
-			return res.status(500).json({ message: "Internal Server Error" });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
@@ -19,7 +22,9 @@ class UserController {
 		try {
 			// Update data
 			if (req.user.id != req.params.id) {
-				return res.status(404).json({ message: "Id User is not found" });
+				const error = new Error("id user not found");
+				error.statusCode = 400;
+				throw error;
 			}
 			let dataUser = await user.findOneAndUpdate(
 				{ _id: req.params.id },
@@ -28,13 +33,18 @@ class UserController {
 			);
 			// If success
 			if (!dataUser) {
-				return res.status(404).json({ message: "Id User is not found" });
+				const error = new Error("id user not found");
+				error.statusCode = 400;
+				throw error;
 			}
 			delete dataUser._doc.password;
 			return res.status(200).json({ message: "Success", data: dataUser });
-		} catch (e) {
-			console.log(e);
-			return res.status(500).json({ message: "Internal Server Error" });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
@@ -61,13 +71,16 @@ class UserController {
 			if (dataReview.totalDocs > 0) {
 				return res.status(200).json({ message: "success", data: dataReview });
 			} else {
-				return res
-					.status(400)
-					.json({ message: "No Movie Reviewed", data: dataReview });
+				const error = new Error("No Photo reviewed");
+				error.statusCode = 400;
+				throw error;
 			}
-		} catch (e) {
-			console.log(e);
-			res.status(500).json({ message: "Internal server error" });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
@@ -82,17 +95,22 @@ class UserController {
 				.exec();
 			let userFavorite = dataFavorite[0].favorite.length;
 			if (userFavorite == 0) {
-				return res.status(404).json({
-					message: "You didn't choose any Photo to be your favorite ",
-				});
+				const error = new Error(
+					"You didn't choose any Photo to be your favorite"
+				);
+				error.statusCode = 400;
+				throw error;
 			} else {
 				return res
 					.status(200)
 					.json({ message: "Success", data: dataFavorite[0].favorite });
 			}
-		} catch (e) {
-			console.log(e);
-			return res.status(500).json({ message: "Internal Server Error" });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
@@ -111,7 +129,14 @@ class UserController {
 					//if photo id null, then create new photo record
 					if (!photoId) {
 						photoData = await myUnsplash.getPhoto(req.query.photo_id);
+						if (photoData.errors.length > 0) {
+							const error = new Error("Photo not found");
+							error.statusCode = 400;
+							throw error;
+						}
 						insertedPhoto = await myUnsplash.savePhotoToLocal(photoData);
+					} else {
+						insertedPhoto = photoId._id;
 					}
 					break;
 				case "flickr":
@@ -123,15 +148,27 @@ class UserController {
 			}
 
 			if (insertedPhoto) {
+				if (dataUser.favorite.indexOf(insertedPhoto) > -1) {
+					const error = new Error("Photo has been added before");
+					error.statusCode = 400;
+					throw error;
+				}
 				dataUser.favorite.push(insertedPhoto);
 				await dataUser.save();
 				return res
 					.status(200)
 					.json({ message: "add favorite success", data: dataUser });
-			} else return res.status(400).json({ message: "add favorite failure" });
-		} catch (e) {
-			console.log(e);
-			return res.status(500).json({ message: "Internal Server Error" });
+			} else {
+				const error = new Error("add favorite failure");
+				error.statusCode = 400;
+				throw error;
+			}
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 
@@ -148,18 +185,18 @@ class UserController {
 
 					//if photo id null, then return error
 					if (!photoId) {
-						return res
-							.status(403)
-							.json({ message: "Photo has not been added at favorite" });
+						const error = new Error("Photo has not been added at favorite");
+						error.statusCode = 400;
+						throw error;
 					}
 					break;
 				case "flickr":
 					photoId = await photo.findOne({ flickr_id: req.query.photo_id });
 					//if photo id null, then return error
 					if (!photoId) {
-						return res
-							.status(403)
-							.json({ message: "Photo has not been added at favorite" });
+						const error = new Error("Photo has not been added at favorite");
+						error.statusCode = 400;
+						throw error;
 					}
 					break;
 				default:
@@ -167,20 +204,23 @@ class UserController {
 					break;
 			}
 
-			indexOfIdPhoto = dataUser.favorite.indexOf(photoId._id);	
+			indexOfIdPhoto = dataUser.favorite.indexOf(photoId._id);
 			dataUser.favorite.splice(indexOfIdPhoto, 1);
 			await dataUser.save();
 
 			if (dataUser.favorite.length == 0) {
-				return res.status(400).json({ message: "Watchlist is empty" });
+				return res.status(200).json({ message: "Favorite is empty" });
 			} else {
 				res
 					.status(200)
-					.json({ message: "delete watchlist success", data: dataUser });
+					.json({ message: "delete favorite success", data: dataUser });
 			}
-		} catch (e) {
-			console.log(e);
-			return res.status(500).json({ message: "Internal Server Error " });
+		} catch (error) {
+			console.log(error);
+			if (!error.statusCode) {
+				err.statusCode = 500;
+			}
+			next(error);
 		}
 	}
 }
