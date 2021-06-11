@@ -10,11 +10,10 @@ const photoController = require("../controllers/photoController");
 const searchValidator = require("../middlewares/validators/searchValidator");
 
 //Create your Router Here
-router.get("/getAll", isUserOrGlobal, searchValidator.getAll, photoController.getAll);
-
+router.get("/all", isUserOrGlobal, photoController.allReviewed);
+router.get("/browse", isUserOrGlobal, photoController.browsePhoto);
 router.get("/search", isUserOrGlobal, photoController.search);
-
-router.get("/detail/:id_movie", isUserOrGlobal, searchValidator.detailMovie, photoController.detail);
-router.get("/getReview/:id_movie", isUserOrGlobal, searchValidator.getReview, photoController.getReview);
+router.get("/detail_local", isUserOrGlobal, photoController.detail_local);
+router.get("/detail_out", isUserOrGlobal, photoController.detail_sources);
 
 module.exports = router;

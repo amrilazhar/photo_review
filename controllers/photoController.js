@@ -1,14 +1,28 @@
 const { review, photo } = require("../models");
 const myUnsplash = require("../helpers/unsplashAPI");
+const myFlickr = require("../helpers/flickrAPI");
 
 class PhotoController {
-	async browsePhoto(req, res) {
+	async browsePhoto(req, res, next) {
 		try {
 			let page = req.query.page ? req.query.page : 1;
 			let limit = req.query.limit ? req.query.limit : 10;
-			let browseData = await myUnsplash.browse(page, limit);
 
-			res.status(200).json({ message: "success", data: browseData.response });
+			let browseData = null;
+			switch (req.query.sources) {
+				case "unsplash":
+					browseData = (await myUnsplash.browse(page, limit)).response;
+					break;
+				case "flickr":
+					browseData = (await myFlickr.browse(req.query.photo_id)).body.photos;
+					break;
+				default:
+					browseData.errors = true;
+					break;
+			}
+			if (browseData.errors) {
+				return res.status(400).json({ message: "No photo Found", data: [] });
+			} else return res.status(200).json({ message: "success", data: browseData });
 		} catch (error) {
 			console.log(error);
 			if (!error.statusCode) {
@@ -19,7 +33,7 @@ class PhotoController {
 	}
 
 	//get detail movie from local DB
-	async detail_local(req, res) {
+	async detail_local(req, res, next) {
 		try {
 			let photoId = null;
 
@@ -77,25 +91,25 @@ class PhotoController {
 	}
 
 	//get Detail movie from sources
-	async detail_sources(req, res) {
+	async detail_sources(req, res, next) {
 		try {
 			let photoData = null;
 			switch (req.query.sources) {
 				case "unsplash":
-					photoData = await myUnsplash.getPhoto(req.query.photo_id);
+					photoData = (await myUnsplash.getPhoto(req.query.photo_id)).response;
 					break;
 				case "flickr":
-					photoData = await photo.findOne({ flickr_id: req.query.photo_id });
+					photoData = await myFlickr.getPhoto(req.query.photo_id);
 					break;
 				default:
-					photoId = null;
+					photoData.errors = true;
 					break;
 			}
 
 			if (!photoData.errors) {
 				res.status(200).json({
 					message: "success",
-					data_photo: photoData.response,
+					data_photo: photoData,
 				});
 			} else {
 				res
@@ -112,7 +126,7 @@ class PhotoController {
 	}
 
 	//get all reviewed photo from local database
-	async allReviewed(req, res) {
+	async allReviewed(req, res, next) {
 		try {
 			const options = {
 				sort: { updated_at: -1 },
@@ -141,24 +155,57 @@ class PhotoController {
 	}
 
 	//search photo from external API
-	async search(req, res) {
+	async search(req, res, next) {
 		try {
-			let options = {
+			let sources = req.query.sources.split(",");
+
+			let optionsUnsplash = {
 				query: req.query.keywords,
 				page: req.query.page ? req.query.page : 1,
 				perPage: req.query.limit ? req.query.limit : 10,
 			};
 
+			let optionsFlickr = {
+				text: req.query.keywords,
+				page: req.query.page ? eval(req.query.page) : 1,
+				per_page: req.query.limit ? eval(req.query.limit) : 10,
+				format: "json",
+				nojsoncallback: 1,
+				media: "photo",
+			};
+
 			if (req.query.color) {
-				options.color = req.query.color;
+				optionsUnsplash.color = req.query.color;
 			}
 
 			if (req.query.orientation) {
-				options.orientation = req.query.orientation;
+				optionsUnsplash.orientation = req.query.orientation;
 			}
 
-			let result = await myUnsplash.search(options);
-			return res.status(200).json(result);
+			let result = sources.map(async (el) => {
+				if (el == "unsplash") {
+					let unsplash = await myUnsplash.search(optionsUnsplash);
+					unsplash.response.type = "unsplash";
+					let retObj = unsplash.response;
+					return retObj;
+				} else if (el == "flickr") {
+					let flickr = await myFlickr.search(optionsFlickr);
+					flickr.body.photos.type = "flickr";
+					let retObj = flickr.body.photos;
+					return retObj;
+				}
+			});
+
+			// proses promise array
+			let container = await Promise.all(result);
+			let retObj = { message: "success" };
+
+			//reformat data before return
+			container.forEach((el) => {
+				retObj[el.type] = el;
+			});
+
+			return res.status(200).json(retObj);
 		} catch (error) {
 			console.log(error);
 			if (!error.statusCode) {

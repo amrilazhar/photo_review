@@ -3,7 +3,7 @@ const myUnsplash = require("../helpers/unsplashAPI");
 
 class UserController {
 	// View data user
-	async myUserProfile(req, res) {
+	async myUserProfile(req, res, next) {
 		try {
 			let dataUser = await user.findOne({ _id: req.user.id });
 			delete dataUser._doc.password;
@@ -18,7 +18,7 @@ class UserController {
 	}
 
 	// Update data user
-	async userUpdate(req, res) {
+	async userUpdate(req, res, next) {
 		try {
 			// Update data
 			if (req.user.id != req.params.id) {
@@ -49,7 +49,7 @@ class UserController {
 	}
 
 	// view review of user
-	async userGetReview(req, res) {
+	async userGetReview(req, res, next) {
 		try {
 			//cek paginate status
 			let paginateStatus = true;
@@ -85,7 +85,7 @@ class UserController {
 	}
 
 	// view watchlist of user
-	async getFavorite(req, res) {
+	async getFavorite(req, res, next) {
 		try {
 			let dataFavorite = await user
 				.find({ _id: req.user.id })
@@ -115,7 +115,7 @@ class UserController {
 	}
 
 	//add favorite
-	async addFavorite(req, res) {
+	async addFavorite(req, res, next) {
 		try {
 			let dataUser = await user.findOne({ _id: req.user.id });
 			let photoId = null;
@@ -173,7 +173,7 @@ class UserController {
 	}
 
 	//delete favorite
-	async deleteFavorite(req, res) {
+	async deleteFavorite(req, res, next) {
 		try {
 			let dataUser = await user.findOne({ _id: req.user.id });
 			let indexOfIdPhoto;
