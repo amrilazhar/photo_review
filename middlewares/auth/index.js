@@ -82,27 +82,6 @@ passport.use(
 );
 
 passport.use(
-  "admin",
-  new JWTstrategy(
-    {
-      secretOrKey: process.env.JWT_SECRET,
-      jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
-    },
-    async (token, done) => {
-      const userSignin = await user.findOne({
-        _id: token.user.id,
-      },"role");
-
-      if (userSignin.role.includes("admin")) {
-        return done(null, token.user);
-      }
-
-      return done(null, false, { message: "you are not Authorized" });
-    }
-  )
-);
-
-passport.use(
   "user",
   new JWTstrategy(
     {
@@ -154,37 +133,6 @@ let doAuth = async (req, res, next) => {
       }
       req.user = user;
       next();
-    })(req, res, next);
-  } catch (e) {
-    console.log(e);
-    return res.status(500).json({
-      message: "internal server error",
-      error: err,
-    });
-  }
-};
-
-let isAdmin = async (req, res, next) => {
-  try {
-    passport.authorize("admin", { session: false }, (err, user, info) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).json({
-          message: "Internal server Error",
-          error: err,
-        });
-      }
-
-      // If user is not exist
-      if (!user) {
-        return res.status(401).json({
-          status: "Error",
-          message: info.message,
-        });
-      }
-      req.user = user;
-      next();
-
     })(req, res, next);
   } catch (e) {
     console.log(e);
@@ -253,4 +201,4 @@ let isUserOrGlobal = async (req, res, next) => {
   }
 };
 
-module.exports = { doAuth, isAdmin, isUser , isUserOrGlobal};
+module.exports = { doAuth, isUser , isUserOrGlobal};
