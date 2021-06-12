@@ -13,7 +13,7 @@ class UserValidator {
       }
 
       //validation when user signup or update
-      if (act === "signup" || act === "/:id") {
+      if (act === "/signup" || act === "/:id") {
         if (!validator.isAlpha(validator.blacklist(req.body.name, " "))) {
           errors.push("Name must be alphabet");
         }

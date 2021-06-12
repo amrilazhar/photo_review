@@ -98,7 +98,7 @@ describe("/POST Photo Reviewed SUCCESS", () => {
 
 //===============|| Get Review ||=======================//
 describe("/GET Review SUCCESS", () => {
-	describe("=GET Review with review's filled ", () => {
+	describe("/GET Review with review's filled ", () => {
 		test("it should GET review of user ", async () => {
 			const res = await request(app)
 				.get(`/user/reviewed_photo`)
@@ -115,7 +115,7 @@ describe("/GET Review SUCCESS", () => {
 });
 //==================|| Get Review using page and limit ||============//
 describe("/GET Review SUCCESS", () => {
-	describe("=GET review with Page and Limit has filled", () => {
+	describe("/GET review with Page and Limit has filled", () => {
 		test("it should GET review of user ", async () => {
 			const res = await request(app)
 				.get(`/user/reviewed_photo`)

@@ -111,7 +111,7 @@ describe("Authentication TEST", () => {
     test("It should return status 400 and error message", async () => {
       const res = await request(app).post("/auth/signup").send({
         name: "mas Reza123",
-        email: "fahmialfareza@icloud.com",
+        email: "aigooo@icloud.com",
         password: "Pasword123!!",
         confirmPassword: "Pasword123!!",
       });

@@ -1,4 +1,12 @@
 # Technical Assessment
+
+# Unit Test
+For ensure code stability when there are change in the code, we conduct a unit test,
+this is the result :
+
+* note : full report of the test can be seen in  `./coverage/Icov-report/index.html`
+# Full Documentation
+Full documentation can be seen here : https://documenter.getpostman.com/view/15024355/TzeTJUbG
 #### Glints Academy Technical Tryouts
 Week 1 - Benchmarking
 

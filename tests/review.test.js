@@ -25,9 +25,7 @@ describe("Review Feature TEST", () => {
         { user_id: 1, photo_id: 1 },
         { unique: true }
       );
-
       
-
       //create user
       const dataUser = {
         name: "Reviewer",
@@ -46,7 +44,7 @@ describe("Review Feature TEST", () => {
       const dataPhoto = {
         title: "Photo Test",
         photo_id : '51239261467',
-        source_type : 'unsplash'
+        source_type : 'flickr'
       };
       let photoData = await photo.create(dataPhoto)
 
