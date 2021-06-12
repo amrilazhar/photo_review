@@ -24,6 +24,6 @@ router.put(
 	isUser,
 	userUpload,
 	userController.userUpdate
-); //Update user profile
+);
 
 module.exports = router;
