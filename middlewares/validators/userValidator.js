@@ -1,16 +1,19 @@
 const validator = require("validator");
-const mongoose = require("mongoose");
 const { user } = require("../../models");
 const bcrypt = require("bcrypt"); // Import bcrypt
 
 class UserValidator {
   async validate(req, res, next) {
     try {
-      let act = req.route.path.substring(1).replace("/:id", "");
+      let act = req.route.path;
       let errors = [];
+      
+      if (!validator.isEmail(req.body.email)) {
+        errors.push("Email is not valid");
+      }
 
       //validation when user signup or update
-      if (act === "signup" || act === "userUpdate") {
+      if (act === "signup" || act === "/:id") {
         if (!validator.isAlpha(validator.blacklist(req.body.name, " "))) {
           errors.push("Name must be alphabet");
         }
@@ -54,24 +57,23 @@ class UserValidator {
         }
       }
 
-      if (!validator.isEmail(req.body.email)) {
-        errors.push("Email is not valid");
-      }
-
       if (errors.length > 0) {
-        return res.status(400).json({
-          message: errors.join(", "),
-        });
+        const error = new Error(
+					errors.join(", ")
+				);
+				error.statusCode = 400;
+				throw error;
       } else {
         next();
       }
-    } catch (e) {
-      console.log(e);
-      return res.status(500).json({
-        message: "internal server error",
-        error: e,
-      });
-    }
+    } catch (error) {
+			//console.log(error);
+			if (!error.statusCode) {
+				error.statusCode = 500;
+        error.message = "Internal Server Error";				
+			}
+			next(error);
+		}
   }
 }
 module.exports = new UserValidator();

@@ -1,7 +1,7 @@
 {
   "name": "azh-splash",
   "version": "0.1.0",
-  "description": "App for Photos Explorer",
+  "description": "Multi-Sources photos Explorer",
   "main": "index.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --testTimeout=1000000 --coverage --forceExit --runInBand",

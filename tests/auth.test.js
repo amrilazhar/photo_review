@@ -50,7 +50,7 @@ describe("Authentication TEST", () => {
 
       expect(res.statusCode).toEqual(500);
       expect(res.body).toBeInstanceOf(Object);
-      expect(res.body.message).toEqual("internal server error");
+      expect(res.body.message).toEqual("Internal Server Error");
     });
   });
 
@@ -103,7 +103,7 @@ describe("Authentication TEST", () => {
 
       expect(res.statusCode).toEqual(500);
       expect(res.body).toBeInstanceOf(Object);
-      expect(res.body.message).toEqual("internal server error");
+      expect(res.body.message).toEqual("Internal Server Error");
     });
   });
 

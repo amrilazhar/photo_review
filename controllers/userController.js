@@ -10,9 +10,10 @@ class UserController {
 			delete dataUser._doc.password;
 			return res.status(200).json({ message: "Success", data: dataUser });
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -41,9 +42,10 @@ class UserController {
 			delete dataUser._doc.password;
 			return res.status(200).json({ message: "Success", data: dataUser });
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -72,14 +74,15 @@ class UserController {
 			if (dataReview.totalDocs > 0) {
 				return res.status(200).json({ message: "success", data: dataReview });
 			} else {
-				const error = new Error("No Photo reviewed");
+				const error = new Error("No Photo Reviewed");
 				error.statusCode = 400;
 				throw error;
 			}
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -107,9 +110,10 @@ class UserController {
 					.json({ message: "Success", data: dataFavorite[0].favorite });
 			}
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -176,9 +180,10 @@ class UserController {
 				throw error;
 			}
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -191,27 +196,32 @@ class UserController {
 			//no favorite data
 			if (dataUser.favorite.length == 0) {
 				return res.status(400).json({ message: "Favorite is empty" });
-			} 
+			}
 
 			let indexOfIdPhoto;
 			let photoId = await photo.findOne({ photo_id: req.query.photo_id });
 
 			if (!photoId) {
-				const error = new Error("Photo has not been added at favorite");
+				const error = new Error("Photo has not been registered at local");
 				error.statusCode = 400;
 				throw error;
 			}
-			
+
 			indexOfIdPhoto = dataUser.favorite.indexOf(photoId._id);
-			dataUser.favorite.splice(indexOfIdPhoto, 1);
-			await dataUser.save();
-
+			if (indexOfIdPhoto > -1) {
+				dataUser.favorite.splice(indexOfIdPhoto, 1);
+				await dataUser.save();
+			} else {
+				const error = new Error("Photo has not been registered as favorite");
+				error.statusCode = 400;
+				throw error;
+			}
 			res.status(200).json({ message: "Delete success", data: dataUser });
-
 		} catch (error) {
-			console.log(error);
+			// console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}

@@ -28,9 +28,9 @@ class ReviewController {
 				data: singleReview,
 			});
 		} catch (error) {
-			console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -39,7 +39,7 @@ class ReviewController {
 	async create(req, res, next) {
 		try {
 			let insertedPhotoId;
-      let photoData;
+			let photoData;
 			let createdData = {
 				title: req.body.title,
 				rating: eval(req.body.rating),
@@ -48,7 +48,7 @@ class ReviewController {
 			};
 			req.body.user_id = req.user.id;
 
-      //check if the photo available
+			//check if the photo available
 			let photoId = await photo.findOne({ photo_id: req.body.photo_id }).exec();
 
 			switch (req.body.sources) {
@@ -86,8 +86,8 @@ class ReviewController {
 					break;
 			}
 
-      // add new photo id
-      createdData.photo_id = insertedPhotoId;
+			// add new photo id
+			createdData.photo_id = insertedPhotoId;
 
 			// Create data
 			let data = await review.create(createdData);
@@ -102,13 +102,14 @@ class ReviewController {
 				e.keyPattern.photo_id == 1 &&
 				e.keyPattern.user_id == 1
 			) {
-				const error = new Error("User has been reviewed this photo");
-				error.statusCode = 400;
-				throw error;
+				e.statusCode = 400
+				e.message = "User has been reviewed this photo";
+				next(e);
 			} else {
-				console.log(e);
+				//console.log(e);
 				if (!e.statusCode) {
 					e.statusCode = 500;
+					e.message = "Internal Server Error";
 				}
 				next(e);
 			}
@@ -131,7 +132,7 @@ class ReviewController {
 				updateData.review = req.body.review;
 			}
 
-      if (req.body.photo_id) {
+			if (req.body.photo_id) {
 				updateData.photo_id = req.body.photo_id;
 			}
 
@@ -149,6 +150,13 @@ class ReviewController {
 				error.statusCode = 400;
 				throw error;
 			}
+			
+			if (singleReview.photo_id.toString() !== req.body.photo_id.toString()) {
+				const error = new Error("photo not found");
+				error.statusCode = 400;
+				throw error;
+			}
+
 			// Update data
 			let data = await review.findOneAndUpdate(
 				{
@@ -166,9 +174,9 @@ class ReviewController {
 				data,
 			});
 		} catch (error) {
-			console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -191,9 +199,9 @@ class ReviewController {
 				message: "Success to delete review",
 			});
 		} catch (error) {
-			console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}

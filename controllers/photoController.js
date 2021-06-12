@@ -22,11 +22,13 @@ class PhotoController {
 			}
 			if (browseData.errors) {
 				return res.status(400).json({ message: "No photo Found", data: [] });
-			} else return res.status(200).json({ message: "success", data: browseData });
+			} else
+				return res.status(200).json({ message: "success", data: browseData });
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -35,11 +37,10 @@ class PhotoController {
 	//get detail movie from local DB
 	async detail_local(req, res, next) {
 		try {
-			let photoId = null;
+			let photoId = await photo.findOne({ photo_id: req.query.photo_id });
 
 			switch (req.query.sources) {
 				case "unsplash":
-					photoId = await photo.findOne({ unsplash_id: req.query.photo_id });
 					//if photo id null, then create new photo record
 					if (!photoId) {
 						const error = new Error("Photo Not Found in Local");
@@ -48,7 +49,6 @@ class PhotoController {
 					}
 					break;
 				case "flickr":
-					photoId = await photo.findOne({ flickr_id: req.query.photo_id });
 					if (!photoId) {
 						const error = new Error("Photo Not Found in Local");
 						error.statusCode = 400;
@@ -82,9 +82,10 @@ class PhotoController {
 					.json({ message: "No photo Found", data_photo: [], data_review: [] });
 			}
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -97,9 +98,9 @@ class PhotoController {
 			switch (req.query.sources) {
 				case "unsplash":
 					photoData = (await myUnsplash.getPhoto(req.query.photo_id)).response;
-          if (!photoData) {
-            photoData = null
-          }
+					if (!photoData) {
+						photoData = null;
+					}
 					break;
 				case "flickr":
 					photoData = await myFlickr.getPhoto(req.query.photo_id);
@@ -120,9 +121,10 @@ class PhotoController {
 					.json({ message: "No photo Found", data_photo: [], data_review: [] });
 			}
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
 				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}
@@ -151,9 +153,13 @@ class PhotoController {
 					.status(400)
 					.json({ message: "Not Reviewed Photo", data: reviewedPhoto });
 			}
-		} catch (e) {
-			console.log(e);
-			res.status(500).json({ message: "Internal server error" });
+		} catch (error) {
+			//console.log(error);
+			if (!error.statusCode) {
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
+			}
+			next(error);
 		}
 	}
 
@@ -210,9 +216,10 @@ class PhotoController {
 
 			return res.status(200).json(retObj);
 		} catch (error) {
-			console.log(error);
+			//console.log(error);
 			if (!error.statusCode) {
-				err.statusCode = 500;
+				error.statusCode = 500;
+				error.message = "Internal Server Error";
 			}
 			next(error);
 		}

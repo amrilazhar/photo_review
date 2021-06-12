@@ -21,12 +21,14 @@ class AuthController {
         message: "success",
         token,
       });
-    } catch (e) {
-      return res.status(500).json({
-        message: "Internal server Error",
-        error: e,
-      });
-    }
+    } catch (error) {
+			//console.log(error);
+			if (!error.statusCode) {
+				error.statusCode = 500;
+        error.message = "Internal Server Error";
+			}
+			next(error);
+		}
   }
 
 }

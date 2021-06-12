@@ -2,29 +2,31 @@ const request = require("supertest");
 const app = require("../index");
 const jwt = require("jsonwebtoken");
 
-const { user, review, movie } = require("../models"); // import transaksi models
+const { user, review, photo } = require("../models"); // import models
 
 let authenticationToken = "0";
-let tempMovieId = "";
+let tempPhotoId = "";
 let tempReviewId = ""
 let tokenAnotherUser ="";
 
 describe("Review Feature TEST", () => {
 
   describe("/POST Create Review", () => {
-    test("It should insert new review to a movie", async () => {
+    test("It should insert new review to a photo", async () => {
       // delete all user, do there were no duplicate admin
       await user.collection.dropIndexes();
       await user.deleteMany();
       await user.collection.createIndex( { email: 1 } , { unique : true } );
-
+      await photo.deleteMany();
       //clean review data
       await review.deleteMany();
       await review.collection.dropIndexes();
       await review.collection.createIndexes(
-        { user_id: 1, movie_id: 1 },
+        { user_id: 1, photo_id: 1 },
         { unique: true }
       );
+
+      
 
       //create user
       const dataUser = {
@@ -34,17 +36,21 @@ describe("Review Feature TEST", () => {
       };
 
       let userData = await user.create(dataUser);
+
       const body = {
         id: userData._id,
         role: userData.role,
         email: userData.email,
       };
 
-      const dataMovie = {
-        title: "Movie Test"
+      const dataPhoto = {
+        title: "Photo Test",
+        photo_id : '51239261467',
+        source_type : 'unsplash'
       };
-      let movieData = await movie.create(dataMovie)
-      tempMovieId = movieData._id
+      let photoData = await photo.create(dataPhoto)
+
+      tempPhotoId = photoData._id
 
       //create token for auth as admin
       const token = jwt.sign(
@@ -59,14 +65,16 @@ describe("Review Feature TEST", () => {
       authenticationToken = token;
 
       const res = await request(app)
-        .post("/review/add")
+        .post("/review")
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
-          rating: "4",
-          review: "Test ini review"
+          title : "test juga",
+          photo_id: "51239261467",
+          rating: "4" ,
+          review: "Test ini review",
+          sources : "flickr"
         });
 
       expect(res.statusCode).toEqual(201);
@@ -83,20 +91,20 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .post("/review/add")
+        .post("/review")
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
-          rating: "4",
-          review: "Test ini review dua kali"
+          title : "test juga",
+          photo_id: "51239261467",
+          rating: "4" ,
+          review: "Test ini review",
+          sources : "flickr"
         });
-
       expect(res.statusCode).toEqual(400);
       expect(res.body).toBeInstanceOf(Object);
-      expect(res.body.message).toEqual("Error");
-      expect(res.body.error).toEqual("User has been reviewed this movie");
+      expect(res.body.message).toEqual("User has been reviewed this photo");
     });
   });
 
@@ -104,14 +112,15 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .post("/review/add")
+        .post("/review")
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: "51239261467",
           rating: "a",
-          review: "Test ini review dua kali"
+          review: "Test ini review dua kali",
+          sources : "flickr"
         });
 
       expect(res.statusCode).toEqual(400);
@@ -120,34 +129,17 @@ describe("Review Feature TEST", () => {
     });
   });
 
-  describe("/POST Create Review attribut movie id not send", () => {
-    test("It should return error", async () => {
-
-      const res = await request(app)
-        .post("/review/add")
-        .set({
-          Authorization: `Bearer ${authenticationToken}`,
-        })
-        .send({
-          review: "Test ini review dua kali"
-        });
-
-        expect(res.statusCode).toEqual(400);
-        expect(res.body).toBeInstanceOf(Object);
-        expect(res.body.message).toEqual("movie_id is not valid and must be 24 character & hexadecimal");
-    });
-  });
 
   describe("/POST Create Review rating More than 5", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .post("/review/add")
+        .post("/review")
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           rating: "7",
           review: "Test ini review dua kali"
         });
@@ -158,30 +150,10 @@ describe("Review Feature TEST", () => {
     });
   });
 
-  describe("/POST Create Review invalid movie ID", () => {
-    test("It should return error", async () => {
-
-      const res = await request(app)
-        .post("/review/add")
-        .set({
-          Authorization: `Bearer ${authenticationToken}`,
-        })
-        .send({
-          movie_id: "tempMovieId",
-          rating: "5",
-          review: "Test ini review dua kali"
-        });
-
-      expect(res.statusCode).toEqual(400);
-      expect(res.body).toBeInstanceOf(Object);
-      expect(res.body.message).toEqual("movie_id is not valid and must be 24 character & hexadecimal");
-    });
-  });
-
   describe("/GET/:id review", () => {
     it("it should GET one the review", async () => {
       const res = await request(app)
-        .get(`/review/getOne/${tempReviewId}`)
+        .get(`/review/${tempReviewId}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         });
@@ -196,21 +168,21 @@ describe("Review Feature TEST", () => {
   describe("/GET/:id review", () => {
     it("it should return review not found", async () => {
       const res = await request(app)
-        .get(`/review/getOne/608579620234671fc97a3508`)
+        .get(`/review/608579620234671fc97a3508`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         });
 
       expect(res.statusCode).toEqual(400);
       expect(res.body).toBeInstanceOf(Object);
-      expect(res.body.message).toEqual("review not found");
+      expect(res.body.message).toEqual("Review not found");
     });
   });
 
   describe("/GET/:id review Invalid ID", () => {
     it("it should return error", async () => {
       const res = await request(app)
-        .get(`/review/getOne/${124124}`)
+        .get(`/review/${124124}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         });
@@ -225,16 +197,15 @@ describe("Review Feature TEST", () => {
     test("It should update current review", async () => {
 
       const res = await request(app)
-        .put(`/review/update/${tempReviewId}`)
+        .put(`/review/${tempReviewId}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           rating: "3",
-          review: "Test Update Review"
-        });
-
+          review: "Test Update Review",
+        })
       expect(res.statusCode).toEqual(201);
       expect(res.body).toBeInstanceOf(Object);
       expect(res.body.message).toEqual("Success");
@@ -246,12 +217,12 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .put(`/review/update/60856e29e9af1c1ffb406b01`)
+        .put(`/review/60856e29e9af1c1ffb406b01`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           rating: "3",
           review: "Test Update Review"
         });
@@ -262,23 +233,23 @@ describe("Review Feature TEST", () => {
     });
   });
 
-  describe("/PUT Edit Review (Movie Not Found)", () => {
+  describe("/PUT Edit Review (photo Not Found)", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .put(`/review/update/${tempReviewId}`)
+        .put(`/review/${tempReviewId}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: "60856e29e9af1c1ffb406b01",
+          photo_id: "60856e29e9af1c1ffb406b01",
           rating: "3",
           review: "Test Update Review"
         });
 
       expect(res.statusCode).toEqual(400);
       expect(res.body).toBeInstanceOf(Object);
-      expect(res.body.message).toEqual("movie not found");
+      expect(res.body.message).toEqual("photo not found");
     });
   });
 
@@ -286,12 +257,12 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .put(`/review/update/tempReviewId`)
+        .put(`/review/tempReviewId`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           review: "Test Update Review"
         });
 
@@ -303,12 +274,12 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .put(`/review/update/${tempReviewId}`)
+        .put(`/review/${tempReviewId}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           rating: "a",
           review: "Test Update Review"
         });
@@ -323,12 +294,12 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .put(`/review/update/${tempReviewId}`)
+        .put(`/review/${tempReviewId}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           rating: "9",
           review: "Test Update Review"
         });
@@ -343,12 +314,12 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .put(`/review/update/${1241}`)
+        .put(`/review/${1241}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           rating: "3",
           review: "Test Update Review"
         });
@@ -356,26 +327,6 @@ describe("Review Feature TEST", () => {
       expect(res.statusCode).toEqual(400);
       expect(res.body).toBeInstanceOf(Object);
       expect(res.body.message).toEqual("id_review is not valid and must be 24 character & hexadecimal");
-    });
-  });
-
-  describe("/PUT Edit Review invalid movie id", () => {
-    test("It should return error", async () => {
-
-      const res = await request(app)
-        .put(`/review/update/${tempReviewId}`)
-        .set({
-          Authorization: `Bearer ${authenticationToken}`,
-        })
-        .send({
-          movie_id: "tempMovieId",
-          rating: "3",
-          review: "Test Update Review"
-        });
-
-      expect(res.statusCode).toEqual(400);
-      expect(res.body).toBeInstanceOf(Object);
-      expect(res.body.message).toEqual("movie_id is not valid and must be 24 character & hexadecimal");
     });
   });
 
@@ -409,7 +360,7 @@ describe("Review Feature TEST", () => {
       tokenAnotherUser = token;
 
       const res = await request(app)
-        .delete(`/review/delete/${tempReviewId}`)
+        .delete(`/review//${tempReviewId}`)
         .set({
           Authorization: `Bearer ${token}`,
         });
@@ -424,17 +375,17 @@ describe("Review Feature TEST", () => {
     test("It should update current review", async () => {
 
       const res = await request(app)
-        .put(`/review/update/${tempReviewId}`)
+        .put(`/review/${tempReviewId}`)
         .set({
           Authorization: `Bearer ${tokenAnotherUser}`,
         })
         .send({
-          movie_id: tempMovieId,
+          photo_id: tempPhotoId,
           rating: "3",
           review: "Test Update Review"
         });
 
-      expect(res.statusCode).toEqual(404);
+      expect(res.statusCode).toEqual(400);
       expect(res.body).toBeInstanceOf(Object);
       expect(res.body.message).toEqual("you are not the owner of this review");
     });
@@ -443,7 +394,7 @@ describe("Review Feature TEST", () => {
   describe("/GET/:id review", () => {
     it("it should GET one the review", async () => {
       const res = await request(app)
-        .get(`/review/getOne/${tempReviewId}`)
+        .get(`/review/${tempReviewId}`)
         .set({
           Authorization: `Bearer ${tokenAnotherUser}`,
         });
@@ -458,7 +409,7 @@ describe("Review Feature TEST", () => {
     test("It should delete current review", async () => {
 
       const res = await request(app)
-        .delete(`/review/delete/${tempReviewId}`)
+        .delete(`/review//${tempReviewId}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         });
@@ -473,7 +424,7 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .delete(`/review/delete/${tempReviewId}`)
+        .delete(`/review//${tempReviewId}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         });
@@ -488,7 +439,7 @@ describe("Review Feature TEST", () => {
     test("It should return error", async () => {
 
       const res = await request(app)
-        .delete(`/review/delete/${124124}`)
+        .delete(`/review//${124124}`)
         .set({
           Authorization: `Bearer ${authenticationToken}`,
         });

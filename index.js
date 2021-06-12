@@ -38,33 +38,6 @@ app.use(fileUpload());
 //set static assets to public directory
 app.use(express.static("public"));
 
-app.use("/log", (req, res, next) => {
-    console.log("masuk sini");
-    return res.status(200).json("yay");
-});
-
-// Load Unsplash API
-const unsplash = createApi({
-	accessKey: process.env.UNSPLASH_ACCESS_KEY,
-	headers: { "Accept-Version": "v1" },
-    fetch : fetch,
-});
-
-app.use("/test",async (req, res, next) => {
-    console.log("masuk sini");
-
-    let options = {
-        query: 'cat',
-        page: 1,
-        perPage: 10,
-        color: 'green',
-        orientation: 'portrait',
-      }
-
-    let result = await unsplash.search.getPhotos(options);
-    return res.status(200).json(result);
-});
-
 // ROUTES DECLARATION & IMPORT
 const authRoutes = require("./routes/authRoute.js");
 app.use("/auth", authRoutes);
@@ -123,7 +96,7 @@ if (process.env.NODE_ENV === "development") {
 //========================= Error Handler ==========================
 app.use((err, req, res, next) => {
 	const status = err.statusCode || 500;
-	const message = err.message;
+  const message = err.message
 	const data = err.data;
 	res.status(status).json({ success: false, message: message, data: data });
 });

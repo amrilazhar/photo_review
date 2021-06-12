@@ -23,7 +23,7 @@ module.exports.search = async (opt) => {
 
 		return dataResult;
 	} catch (error) {
-		console.log(error);
+		//console.log(error);
 		return null;
 	}
 };
@@ -52,7 +52,7 @@ module.exports.browse = async (page = 1, limit = 10) => {
 
 		return dataResult;
 	} catch (error) {
-		console.log(error);
+		//console.log(error);
 		return null;
 	}
 };
@@ -77,7 +77,7 @@ module.exports.getPhoto = async (id) => {
 		let dataResult = Object.assign(detail, { urls: urls });
 		return dataResult;
 	} catch (error) {
-		console.log(error);
+		//console.log(error);
 		return null;
 	}
 };
@@ -101,14 +101,13 @@ module.exports.savePhotoToLocal = async (data) => {
 			source_updated_at: dates,
 			source_type: "flickr",
 		};
-        console.log(newData);
 
 		let insertedData = await photo.create(newData);
 		if (insertedData) {
 			return insertedData.id;
 		} else return false;
 	} catch (error) {
-		console.log(error);
+		//console.log(error);
 		return null;
 	}
 };
