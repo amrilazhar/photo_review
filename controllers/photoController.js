@@ -14,7 +14,7 @@ class PhotoController {
 					browseData = (await myUnsplash.browse(page, limit)).response;
 					break;
 				case "flickr":
-					browseData = (await myFlickr.browse(req.query.photo_id)).body.photos;
+					browseData = (await myFlickr.browse(page, limit)).body.photos;
 					break;
 				default:
 					browseData.errors = true;
